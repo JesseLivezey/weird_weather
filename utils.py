@@ -48,8 +48,10 @@ def single_station_data(df, station):
 def short_name(name):
     """
     Return a shortened station name. Useful for
-    plot titles.
+    plot titles, legends.
     """
     name = ' '.join(name.split(' ')[:-2])
-    name = name.replace('METROPOLITAN', 'MET.')
+    name = name.title()
+    name = name.replace('Metropolitan', 'Metro')
+    name = name.replace('International', "Int'l")
     return name
