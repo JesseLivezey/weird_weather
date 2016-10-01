@@ -65,6 +65,9 @@ def short_name(name):
 
 
 def mean_annual_powerspectrum(df, col):
+    """
+    Return average annual powerspectrum.
+    """
     years = sorted(set(df.index.year))
     years = [year for year in years if
              (df.index.year == year).sum() >=365]

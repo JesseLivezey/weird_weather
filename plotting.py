@@ -26,7 +26,6 @@ def plot_annual_power_spectrum(df, stations):
     f : figure
         Matplotlib figure.
     """
-    freq = rfftfreq(365, 1./365)
     f, axes = plt.subplots(len(stations), 1,
                            sharex=True,
                            figsize=(6, 2*len(stations)))
@@ -36,8 +35,17 @@ def plot_annual_power_spectrum(df, stations):
         freqs, tmin_power = utils.mean_annual_powerspectrum(data, 'TMIN')
         freqs, tmax_power = utils.mean_annual_powerspectrum(data, 'TMAX')
         ax.loglog(freqs, tmin_power, c='blue')
+        ax.loglog(freqs, tmin_power, '.', c='blue', alpha=.5)
         ax.loglog(freqs, tmax_power, c='red')
+        ax.loglog(freqs, tmax_power, '.', c='red', alpha=.5)
         ax.set_title(name)
+        ax.set_ylabel('Temp.')
+        ax.axvline(12, c='black', linestyle='--', label='Monthly fluctuations')
+        ax.axvline(52, c='black', label='Weekly fluctuations')
+        ax.set_ylim([1e1, 1e4])
+        ax.set_xlim([1e0, 2e2])
+    axes[0].legend(loc='best')
+    axes[-1].set_xlabel('Cycles/year')
     
 
 def plot_stations_all_time(df, stations, t_range=None):
@@ -172,8 +180,9 @@ def plot_annual_daily_comparison(df, stations):
         e = Ellipse(xy=[annual_delta.mean(), np.nanmean(daily_delta)],
                     height=2*np.nanstd(daily_delta),
                     width=2*annual_delta.std())
-        x_max = max(x_max, annual_delta.mean() + 2*annual_delta.std())
-        y_max = max(y_max, np.nanmean(daily_delta) + 2*np.nanstd(daily_delta))
+        ax.plot(annual_delta.mean(), np.nanmean(daily_delta), 'o', c=colors[ii])
+        x_max = max(x_max, annual_delta.mean() + 1.5*annual_delta.std())
+        y_max = max(y_max, np.nanmean(daily_delta) + 1.5*np.nanstd(daily_delta))
         ax.add_artist(e)
         e.set_facecolor(colors[ii])
         e.set_alpha(.5)
