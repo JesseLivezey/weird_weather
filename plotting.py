@@ -5,8 +5,40 @@ from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 
+from importlib import reload
 import utils
+reload(utils)
 
+
+def plot_annual_power_spectrum(df, stations):
+    """
+    Plot annual temperature powerspectrum.
+    
+    Parameters
+    ----------
+    df : dataframe
+        Data for all stations.
+    stations : list
+        List of stations to include in plot.
+    
+    Returns
+    -------
+    f : figure
+        Matplotlib figure.
+    """
+    freq = rfftfreq(365, 1./365)
+    f, axes = plt.subplots(len(stations), 1,
+                           sharex=True,
+                           figsize=(6, 2*len(stations)))
+    for ii, (st, ax) in enumerate(zip(stations, axes)):
+        name = utils.short_name(st)
+        data = utils.single_station_data(df, st)
+        freqs, tmin_power = utils.mean_annual_powerspectrum(data, 'TMIN')
+        freqs, tmax_power = utils.mean_annual_powerspectrum(data, 'TMAX')
+        ax.loglog(freqs, tmin_power, c='blue')
+        ax.loglog(freqs, tmax_power, c='red')
+        ax.set_title(name)
+    
 
 def plot_stations_all_time(df, stations, t_range=None):
     """

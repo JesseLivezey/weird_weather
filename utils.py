@@ -4,6 +4,13 @@ import matplotlib
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 
+from numpy.fft import rfftfreq
+
+try:
+    from accelerate.mkl.fftpack import rfft
+except ImportError:
+    from numpy.fft import rfft
+
 rcParams.update({'figure.autolayout': True})
 
 def preprocess(df, t_range=None):
@@ -55,3 +62,13 @@ def short_name(name):
     name = name.replace('Metropolitan', 'Metro')
     name = name.replace('International', "Int'l")
     return name
+
+
+def mean_annual_powerspectrum(df, col):
+    years = sorted(set(df.index.year))
+    years = [year for year in years if
+             (df.index.year == year).sum() >=365]
+    data = np.zeros((len(years), 365))
+    for ii, year in enumerate(years):
+        data[ii] = df[col].loc[df.index.year == year][:365]
+    return rfftfreq(365, 1./365), abs(rfft(data)).mean(axis=0)
