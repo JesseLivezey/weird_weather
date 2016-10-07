@@ -10,6 +10,52 @@ import utils
 reload(utils)
 
 
+def plot_daily_fluctuations(df, stations):
+    """
+    Plot daily fluctuations for TMAX and TMIN.
+    
+    Parameters
+    ----------
+    df : dataframe
+        Data for all stations.
+    stations : list
+        List of stations to include in plot.
+    
+    Returns
+    -------
+    f : figure
+        Matplotlib figure.
+    """
+    f, axes = plt.subplots(len(stations), 1,
+                           sharex=True,
+                           figsize=(5, 2*len(stations)))
+    for ii, (st, ax) in enumerate(zip(stations, axes)):
+        name = utils.short_name(st)
+        data = utils.single_station_data(df, st)
+
+        min_data, years = utils.annual_data(data, 'TMIN')
+        min_data -= min_data.mean(axis=0, keepdims=True)
+        hist, bins = np.histogram(min_data.flatten(), bins=60,
+                                  range=[-30, 30], density=True)
+        ax.plot(bins[:-1], hist, 'b-', drawstyle='steps=pre', label='Daily min')
+
+        max_data, years = utils.annual_data(data, 'TMAX')
+        max_data -= max_data.mean(axis=0, keepdims=True)
+        hist, bins = np.histogram(max_data.flatten(), bins=60,
+                                  range=[-30, 30], density=True)
+        ax.plot(bins[:-1], hist, 'r-', drawstyle='steps=pre', label='Daily max')
+
+        ax.set_title(name)
+        ax.set_ylabel('pdf')
+        ax.set_ylim([0, .16])
+        ax.set_yticks(np.arange(0, .17, .04))
+        ax.grid()
+    axes[0].legend(loc='best', ncol=2)
+    ax.set_xlabel('Deviation from mean daily temperature')
+
+    return f
+
+
 def plot_annual_power_spectrum(df, stations):
     """
     Plot annual temperature powerspectrum.
@@ -44,8 +90,10 @@ def plot_annual_power_spectrum(df, stations):
         ax.axvline(52, c='black', label='Weekly fluctuations')
         ax.set_ylim([1e1, 1e4])
         ax.set_xlim([1e0, 2e2])
-    axes[0].legend(loc='best')
+    axes[0].legend(loc='best', ncol=2)
     axes[-1].set_xlabel('Cycles/year')
+
+    return f
     
 
 def plot_stations_all_time(df, stations, t_range=None):
@@ -134,6 +182,7 @@ def plot_annual_temperature(df, stations, t_range=None):
         #ax.set_xlabel('Day of year')
         ax.set_xticks([79, 172, 265, 344])
         ax.set_xticklabels(['March 20', 'June 21', 'Sept. 22', 'Dec. 21'])
+        ax.grid()
     return f
 
 def plot_annual_daily_comparison(df, stations):
@@ -158,6 +207,8 @@ def plot_annual_daily_comparison(df, stations):
     ax = f.gca()
     x_max = 0.
     y_max = 0.
+    x_min = np.inf
+    y_min = np.inf
     for ii, st in enumerate(stations):
         name = utils.short_name(st)
         data = utils.single_station_data(df, st)
@@ -183,14 +234,17 @@ def plot_annual_daily_comparison(df, stations):
         ax.plot(annual_delta.mean(), np.nanmean(daily_delta), 'o', c=colors[ii])
         x_max = max(x_max, annual_delta.mean() + 1.5*annual_delta.std())
         y_max = max(y_max, np.nanmean(daily_delta) + 1.5*np.nanstd(daily_delta))
+        x_min = min(x_min, annual_delta.mean() - 1.5*annual_delta.std())
+        y_min = min(y_min, np.nanmean(daily_delta) - 1.5*np.nanstd(daily_delta))
         ax.add_artist(e)
         e.set_facecolor(colors[ii])
         e.set_alpha(.5)
         e.set_clip_box(ax.bbox)
         ax.plot(0, 0, c=colors[ii], label=name)
-    ax.set_xlim([50, x_max])
-    ax.set_ylim([0, y_max])
+    ax.set_xlim([x_min, x_max])
+    ax.set_ylim([y_min, y_max])
     ax.legend(loc='lower right', prop={'size': 12})
     ax.set_xlabel('Annual temp. swing')
     ax.set_ylabel('Daily temp. swing')
+    plt.grid()
     return f

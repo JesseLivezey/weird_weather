@@ -63,10 +63,15 @@ def short_name(name):
     name = name.replace('International', "Int'l")
     return name
 
-
 def mean_annual_powerspectrum(df, col):
     """
     Return average annual powerspectrum.
+    """
+    return rfftfreq(365, 1./365), abs(rfft(annual_data(df, col)[0])).mean(axis=0)
+
+def annual_data(df, col):
+    """
+    Return annual data.
     """
     years = sorted(set(df.index.year))
     years = [year for year in years if
@@ -74,4 +79,4 @@ def mean_annual_powerspectrum(df, col):
     data = np.zeros((len(years), 365))
     for ii, year in enumerate(years):
         data[ii] = df[col].loc[df.index.year == year][:365]
-    return rfftfreq(365, 1./365), abs(rfft(data)).mean(axis=0)
+    return data, years
