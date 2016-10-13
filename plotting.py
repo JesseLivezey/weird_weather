@@ -10,6 +10,44 @@ import utils
 reload(utils)
 
 
+def plot_annual_jacket_crossings(df, stations, temp):
+    """
+    Plot mean annual temperature variations for all stations.
+    
+    Parameters
+    ----------
+    df : dataframe
+        Data for all stations.
+    stations : list
+        List of stations to include in plot.
+    t_range : list, optional
+        Values to clip temperatures to.
+    
+    Returns
+    -------
+    f : figure
+        Matplotlib figure.
+    """
+    days = np.linspace(1, 365, num=365)
+    f, axes = plt.subplots(len(stations), 1,
+                           sharex=True,
+                           figsize=(6, 2*len(stations)))
+    for ii, (st, ax) in enumerate(zip(stations, axes)):
+        name = utils.short_name(st)
+        data = utils.single_station_data(df, st)
+        cross, years = utils.annual_jacket_crossing(data, temp)
+        mean = np.nanmean(cross, axis=0)
+        ax.fill_between(days, np.zeros_like(mean), mean, facecolor='blue',
+                        alpha=.5)
+        ax.set_ylim([0, 1])
+        ax.set_xlim([0, 366])
+        ax.set_title(name)
+        ax.set_xticks([79, 172, 265, 344])
+        ax.set_xticklabels(['March 20', 'June 21', 'Sept. 22', 'Dec. 21'])
+        ax.set_ylabel('P(jacket crossing)')
+        ax.grid()
+    return f
+
 def plot_daily_fluctuations(df, stations):
     """
     Plot daily fluctuations for TMAX and TMIN.
@@ -183,6 +221,7 @@ def plot_annual_temperature(df, stations, t_range=None):
         ax.set_xticks([79, 172, 265, 344])
         ax.set_xticklabels(['March 20', 'June 21', 'Sept. 22', 'Dec. 21'])
         ax.grid()
+        ax.set_ylabel('Temp.')
     return f
 
 def plot_annual_daily_comparison(df, stations):

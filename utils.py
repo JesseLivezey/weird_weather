@@ -80,3 +80,16 @@ def annual_data(df, col):
     for ii, year in enumerate(years):
         data[ii] = df[col].loc[df.index.year == year][:365]
     return data, years
+
+def annual_jacket_crossing(df, temp):
+    """
+    Return annual data.
+    """
+    years = sorted(set(df.index.year))
+    years = [year for year in years if
+             (df.index.year == year).sum() >=365]
+    data = np.zeros((len(years), 365), dtype=bool)
+    for ii, year in enumerate(years):
+        data[ii] = np.logical_and(df['TMIN'].loc[df.index.year == year][:365] < temp,
+                                  df['TMAX'].loc[df.index.year == year][:365] > temp)
+    return data, years
