@@ -37,11 +37,16 @@ def plot_annual_jacket_crossings(df, stations, temp):
         data = utils.single_station_data(df, st)
         cross, years = utils.annual_jacket_crossing(data, temp)
         mean = np.nanmean(cross, axis=0)
+        frac_cross = (mean >= .5).sum()/float(mean.shape[0])
         ax.fill_between(days, np.zeros_like(mean), mean, facecolor='blue',
                         alpha=.5)
+        ax.text(7.5, .65, '{:.2%} of days\nP>=.5\n@{} deg.'.format(frac_cross, temp),
+                bbox={'facecolor':'white', 'alpha':0.5, 'pad':5})
+        ax.axhline(.5, c='black')
         ax.set_ylim([0, 1])
         ax.set_xlim([0, 366])
         ax.set_title(name)
+        ax.set_yticks(np.linspace(0, 1, 5))
         ax.set_xticks([79, 172, 265, 344])
         ax.set_xticklabels(['March 20', 'June 21', 'Sept. 22', 'Dec. 21'])
         ax.set_ylabel('P(jacket crossing)')
@@ -84,7 +89,7 @@ def plot_daily_fluctuations(df, stations):
         ax.plot(bins[:-1], hist, 'r-', drawstyle='steps=pre', label='Daily max')
 
         ax.set_title(name)
-        ax.set_ylabel('pdf')
+        ax.set_ylabel('prob. density')
         ax.set_ylim([0, .16])
         ax.set_yticks(np.arange(0, .17, .04))
         ax.grid()
@@ -128,102 +133,12 @@ def plot_annual_power_spectrum(df, stations):
         ax.axvline(52, c='black', label='Weekly fluctuations')
         ax.set_ylim([1e1, 1e4])
         ax.set_xlim([1e0, 2e2])
+        ax.grid()
     axes[0].legend(loc='best', ncol=2)
     axes[-1].set_xlabel('Cycles/year')
 
     return f
     
-
-def plot_stations_all_time(df, stations, t_range=None):
-    """
-    Plot all min and max temp data for all stations.
-    
-    Parameters
-    ----------
-    df : dataframe
-        Data for all stations.
-    stations : list
-        List of stations to include in plot.
-    t_range : list, optional
-        Values to clip temperatures to.
-    
-    Returns
-    -------
-    f : figure
-        Matplotlib figure.
-    """
-    if t_range is None:
-        t_range = [-20, 120]
-    f, axes = plt.subplots(len(stations), 1,
-                           figsize=(12, 2*len(stations)))
-    for ii, (st, ax) in enumerate(zip(stations, axes)):
-        name = utils.short_name(st)
-        data = utils.single_station_data(df, st)
-        if ii == 0:
-            legend = True
-        else:
-            legend = False
-        time = matplotlib.dates.date2num(data.index.date)
-        for p, c in zip(['TMIN', 'TMAX'], ['blue', 'red']):
-            ax.plot_date(time, data[p], c=c, fmt='-', alpha=.5)
-            mean = data[p].mean()
-            rolling = data[p].rolling(window=30, min_periods=10,
-                                      center=True).median()
-            y = mean*np.ones_like(time)
-            ax.plot_date(time, y, c=c, zorder=10, fmt='-')
-            ax.plot_date(time, rolling, c=c, zorder=10, fmt='-')
-        ax.set_ylim(t_range)
-        ax.set_title(name)
-        ax.set_ylabel('Temp.')
-    ax.set_xlabel('Year')
-    return f
-        
-def plot_annual_temperature(df, stations, t_range=None):
-    """
-    Plot mean annual temperature variations for all stations.
-    
-    Parameters
-    ----------
-    df : dataframe
-        Data for all stations.
-    stations : list
-        List of stations to include in plot.
-    t_range : list, optional
-        Values to clip temperatures to.
-    
-    Returns
-    -------
-    f : figure
-        Matplotlib figure.
-    """
-    if t_range is None:
-        t_range = [0, 100]
-    time = np.linspace(1, 365, num=365)
-    f, axes = plt.subplots(len(stations), 1,
-                           sharex=True,
-                           figsize=(6, 2*len(stations)))
-    for ii, (st, ax) in enumerate(zip(stations, axes)):
-        name = utils.short_name(st)
-        data = utils.single_station_data(df, st)
-        mean = np.zeros(365)
-        delta = np.zeros(365)
-        for day in range(365):
-            temps = data[['TMIN', 'TMAX']].loc[data['day'] == day+1]
-            mean[day] = np.nanmean(temps.values)
-            delta[day] = np.nanmean((temps['TMAX']-temps['TMIN']).values)
-        ax.fill_between(time, mean+delta/2., mean-delta/2., facecolor='red',
-                        alpha=.5)
-        ax.plot(time, mean, c='black')
-        ax.set_ylim(t_range)
-        ax.set_xlim([0, 366])
-        ax.set_title(name)
-        #ax.set_xlabel('Day of year')
-        ax.set_xticks([79, 172, 265, 344])
-        ax.set_xticklabels(['March 20', 'June 21', 'Sept. 22', 'Dec. 21'])
-        ax.grid()
-        ax.set_ylabel('Temp.')
-    return f
-
 def plot_annual_daily_comparison(df, stations):
     """
     Plot annual vs. daily temperature variations for all stations.
@@ -286,4 +201,94 @@ def plot_annual_daily_comparison(df, stations):
     ax.set_xlabel('Annual temp. swing')
     ax.set_ylabel('Daily temp. swing')
     plt.grid()
+    return f
+
+def plot_annual_temperature(df, stations, t_range=None):
+    """
+    Plot mean annual temperature variations for all stations.
+    
+    Parameters
+    ----------
+    df : dataframe
+        Data for all stations.
+    stations : list
+        List of stations to include in plot.
+    t_range : list, optional
+        Values to clip temperatures to.
+    
+    Returns
+    -------
+    f : figure
+        Matplotlib figure.
+    """
+    if t_range is None:
+        t_range = [0, 100]
+    time = np.linspace(1, 365, num=365)
+    f, axes = plt.subplots(len(stations), 1,
+                           sharex=True,
+                           figsize=(6, 2*len(stations)))
+    for ii, (st, ax) in enumerate(zip(stations, axes)):
+        name = utils.short_name(st)
+        data = utils.single_station_data(df, st)
+        mean = np.zeros(365)
+        delta = np.zeros(365)
+        for day in range(365):
+            temps = data[['TMIN', 'TMAX']].loc[data['day'] == day+1]
+            mean[day] = np.nanmean(temps.values)
+            delta[day] = np.nanmean((temps['TMAX']-temps['TMIN']).values)
+        ax.fill_between(time, mean+delta/2., mean-delta/2., facecolor='red',
+                        alpha=.5)
+        ax.plot(time, mean, c='black')
+        ax.set_ylim(t_range)
+        ax.set_xlim([0, 366])
+        ax.set_title(name)
+        #ax.set_xlabel('Day of year')
+        ax.set_xticks([79, 172, 265, 344])
+        ax.set_xticklabels(['March 20', 'June 21', 'Sept. 22', 'Dec. 21'])
+        ax.grid()
+        ax.set_ylabel('Temp.')
+    return f
+
+def plot_stations_all_time(df, stations, t_range=None):
+    """
+    Plot all min and max temp data for all stations.
+    
+    Parameters
+    ----------
+    df : dataframe
+        Data for all stations.
+    stations : list
+        List of stations to include in plot.
+    t_range : list, optional
+        Values to clip temperatures to.
+    
+    Returns
+    -------
+    f : figure
+        Matplotlib figure.
+    """
+    if t_range is None:
+        t_range = [-20, 120]
+    f, axes = plt.subplots(len(stations), 1,
+                           figsize=(12, 2*len(stations)))
+    for ii, (st, ax) in enumerate(zip(stations, axes)):
+        name = utils.short_name(st)
+        data = utils.single_station_data(df, st)
+        if ii == 0:
+            legend = True
+        else:
+            legend = False
+        time = matplotlib.dates.date2num(data.index.date)
+        for p, c in zip(['TMIN', 'TMAX'], ['blue', 'red']):
+            ax.plot_date(time, data[p], c=c, fmt='-', alpha=.5)
+            mean = data[p].mean()
+            rolling = data[p].rolling(window=30, min_periods=10,
+                                      center=True).median()
+            y = mean*np.ones_like(time)
+            ax.plot_date(time, y, c=c, zorder=10, fmt='-')
+            ax.plot_date(time, rolling, c=c, zorder=10, fmt='-')
+        ax.set_ylim(t_range)
+        ax.set_title(name)
+        ax.set_ylabel('Temp.')
+    ax.set_xlabel('Year')
     return f
