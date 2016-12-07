@@ -76,17 +76,17 @@ def plot_daily_fluctuations(df, stations):
         name = utils.short_name(st)
         data = utils.single_station_data(df, st)
 
-        min_data, years = utils.annual_data(data, 'TMIN')
-        min_data -= min_data.mean(axis=0, keepdims=True)
-        hist, bins = np.histogram(min_data.flatten(), bins=60,
-                                  range=[-30, 30], density=True)
-        ax.plot(bins[:-1], hist, 'b-', drawstyle='steps=pre', label='Daily min')
-
         max_data, years = utils.annual_data(data, 'TMAX')
         max_data -= max_data.mean(axis=0, keepdims=True)
         hist, bins = np.histogram(max_data.flatten(), bins=60,
                                   range=[-30, 30], density=True)
-        ax.plot(bins[:-1], hist, 'r-', drawstyle='steps=pre', label='Daily max')
+        ax.step(bins[:-1], hist, 'r', where='mid', label='Daily max')
+
+        min_data, years = utils.annual_data(data, 'TMIN')
+        min_data -= min_data.mean(axis=0, keepdims=True)
+        hist, bins = np.histogram(min_data.flatten(), bins=60,
+                                  range=[-30, 30], density=True)
+        ax.step(bins[:-1], hist, 'b', where='mid', label='Daily min')
 
         ax.set_title(name)
         ax.set_ylabel('prob. density')
@@ -134,7 +134,9 @@ def plot_annual_power_spectrum(df, stations):
         ax.set_ylim([1e1, 1e4])
         ax.set_xlim([1e0, 2e2])
         ax.grid()
-    axes[0].legend(loc='best', ncol=2)
+    axes[0].plot(0, 0, 'r-', label='Daily max')
+    axes[0].plot(0, 0, 'b-', label='Daily min')
+    leg = axes[0].legend(loc='best', ncol=2)
     axes[-1].set_xlabel('Cycles/year')
 
     return f
