@@ -157,8 +157,7 @@ def plot_annual_daily_comparison(df, stations):
     """
     colors = matplotlib.cm.get_cmap('plasma')
     colors = [colors(v) for v in np.linspace(0, 1, len(stations))]
-    f = plt.figure(figsize=(6, 6))
-    ax = f.gca()
+    f, ax = plt.subplots(1)
     x_max = 0.
     y_max = 0.
     x_min = np.inf
@@ -197,9 +196,11 @@ def plot_annual_daily_comparison(df, stations):
         ax.plot(0, 0, c=colors[ii], label=name)
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
-    ax.legend(loc='lower right', prop={'size': 12})
+    leg = ax.legend(loc='best', prop={'size': 12}, ncol=2)
+    leg.get_frame().set_alpha(0.5)
     ax.set_xlabel('Annual temp. swing')
     ax.set_ylabel('Daily temp. swing')
+    f.set_size_inches(8., 8.*(y_max-y_min)/(x_max-x_min))
     plt.grid()
     return f
 
