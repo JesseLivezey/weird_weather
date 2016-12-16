@@ -37,10 +37,11 @@ def plot_annual_jacket_crossings(df, stations, temp):
         data = utils.single_station_data(df, st)
         cross, years = utils.annual_jacket_crossing(data, temp)
         mean = np.nanmean(cross, axis=0)
-        frac_cross = (mean >= .5).sum()/float(mean.shape[0])
+        frac_cross = (mean > .5).sum()/float(mean.shape[0])
         ax.fill_between(days, np.zeros_like(mean), mean, facecolor='blue',
                         alpha=.5)
-        ax.text(7.5, .65, '{:.2%} of days\nP>=.5\n@{} deg.'.format(frac_cross, temp),
+        ax.text(7.5, .65, '{}% of days\nP>.5\n@{} deg.'.format(np.rint(100*frac_cross).astype(int),
+                                                                temp),
                 bbox={'facecolor':'white', 'alpha':0.5, 'pad':5})
         ax.axhline(.5, c='black')
         ax.set_ylim([0, 1])
@@ -90,8 +91,8 @@ def plot_daily_fluctuations(df, stations):
 
         ax.set_title(name)
         ax.set_ylabel('prob. density')
-        ax.set_ylim([0, .16])
-        ax.set_yticks(np.arange(0, .17, .04))
+        ax.set_ylim([0, .15])
+        ax.set_yticks(np.arange(0, .16, .05))
         ax.grid()
     axes[0].legend(loc='best', ncol=2)
     ax.set_xlabel('Deviation from mean daily temperature')
